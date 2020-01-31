@@ -1,0 +1,61 @@
+trigger:
+- none
+
+resources:
+- repo: self
+
+variables:
+- group: ""
+
+stages:
+- stage: terraform_apply_base_services
+  displayName: Terraform apply base servcies
+  jobs:  
+  - job: run_bash
+    displayName: Run bash
+    pool:
+      #vmImage: "ubuntu-latest"
+      name: ""
+    variables:
+      tfsecret: ''
+    steps:
+    - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@0
+      inputs:
+        terraformVersion: $(terraform-version)
+
+    - task: AzureCLI@1
+      displayName: 'Get SPN'
+      inputs:
+        azureSubscription: ''
+        scriptLocation: inlineScript
+        inlineScript: |
+          echo 'get spn details'
+          CLIENT_ID=${servicePrincipalId:-}
+          CLIENT_SECRET=${servicePrincipalKey:-}
+
+          echo "##vso[task.setvariable variable=tfsecret;]$CLIENT_SECRET"
+        addSpnToEnvironment: true
+    - task: AzureCLI@2
+      displayName: Azure CLI - Base Services
+      inputs:
+        azureSubscription: ''
+        scriptType: bash
+        scriptPath: aks-commander/terraform.sh
+        scriptArguments: "--action=apply --module=base --backend-secret=$(tfsecret) --workspace=$(terraform-workspace)"
+        addSpnToEnvironment: true
+    - task: AzureCLI@2
+      displayName: Azure CLI - AKS cluster
+      inputs:
+        azureSubscription: ''
+        scriptType: bash
+        scriptPath: aks-commander/terraform.sh
+        scriptArguments: "--action=apply --module=aks --backend-secret=$(tfsecret) --workspace=$(terraform-workspace)"
+        addSpnToEnvironment: true
+    - task: AzureCLI@2
+      displayName: Azure CLI - bootstrap cluster
+      inputs:
+        azureSubscription: ''
+        scriptType: bash
+        scriptPath: aks-commander/bootstrap_cluster.sh
+        scriptArguments: "$(terraform-workspace) $(tfsecret)"
+        addSpnToEnvironment: true

@@ -1,0 +1,5 @@
+aks_vnet_address_space      = ""
+aks_subnet_address_prefix   = ""
+redis_subnet_address_prefix = ""
+aci_subnet_address_prefix = ""
+aks_subnet_gpu_address_prefix = ""

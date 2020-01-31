@@ -1,0 +1,27 @@
+trigger:
+- none
+
+resources:
+- repo: self
+
+variables:
+- group: "deployment-configuration"
+- group: "tokens"
+
+stages:
+- stage: terraform
+  displayName: Terraform
+  jobs:  
+  - job: run_bash
+    displayName: Run bash
+    pool:
+      vmImage: "ubuntu-latest"
+    steps:
+    - task: AzureCLI@2
+      displayName: Azure CLI
+      inputs:
+        azureSubscription: subscription
+        scriptType: bash
+        scriptPath: scripts/variable_test.sh
+        scriptArguments: "$(resource-group) $(cluster-name) $(namespace) $(AKSCOMM_DEPLOYMENT_TARGETS) $(AZURE_DEVOPS_EXT_PAT)"
+        addSpnToEnvironment: true
